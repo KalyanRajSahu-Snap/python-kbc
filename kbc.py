@@ -9,6 +9,9 @@ class MillionaireGame:
         self.root.geometry("800x600")
         self.root.configure(bg="#000080")
 
+        self.timer = 30
+        self.timer_running = False
+
         # Prize amounts
         self.prize_amounts = [
             100, 200, 300, 500, 1000,
@@ -16,7 +19,7 @@ class MillionaireGame:
             64000, 125000, 250000, 500000, 1000000
         ]
         
-        # Question bank - you can add more questions
+        # Question bank
         self.questions = [
             {
                 "question": "Which planet is known as the Red Planet?",
@@ -57,6 +60,16 @@ class MillionaireGame:
         self.load_question()
 
     def setup_gui(self):
+        # Timer label
+        self.timer_label = tk.Label(
+            self.root,
+            text="Time: 30",
+            bg="#000080",
+            fg="white",
+            font=("Arial", 14, "bold")
+        )
+        self.timer_label.pack(pady=10)
+
         # Question frame
         self.question_frame = tk.Frame(self.root, bg="#000080")
         self.question_frame.pack(pady=20)
@@ -70,7 +83,7 @@ class MillionaireGame:
         )
         self.question_label.pack()
 
-        # Options frame
+        # Options frame with grid layout
         self.options_frame = tk.Frame(self.root, bg="#000080")
         self.options_frame.pack(pady=20)
 
@@ -78,13 +91,16 @@ class MillionaireGame:
         for i in range(4):
             btn = tk.Button(
                 self.options_frame,
-                width=40,
+                width=30,
+                height=2,
                 bg="#000040",
                 fg="white",
                 font=("Arial", 12),
                 command=lambda x=i: self.check_answer(x)
             )
-            btn.pack(pady=5)
+            row = i // 2  # Integer division to get row (0 or 1)
+            col = i % 2   # Remainder to get column (0 or 1)
+            btn.grid(row=row, column=col, padx=10, pady=5)
             self.option_buttons.append(btn)
 
         # Lifelines frame
@@ -128,11 +144,27 @@ class MillionaireGame:
         )
         self.prize_label.pack(pady=20)
 
+    def start_timer(self):
+        if self.timer > 0 and self.timer_running:
+            self.timer -= 1
+            self.timer_label.config(text=f"Time: {self.timer}")
+            self.root.after(1000, self.start_timer)
+        elif self.timer == 0 and self.timer_running:
+            self.timer_running = False
+            messagebox.showinfo("Time's Up!", f"You've won ${self.prize_amounts[max(0, self.current_prize_index-1)]:,}")
+            self.root.quit()
+
     def load_question(self):
         if self.current_question >= len(self.questions):
             messagebox.showinfo("Congratulations!", "You've won $1,000,000!")
             self.root.quit()
             return
+
+        # Reset and start timer
+        self.timer = 30
+        self.timer_running = True
+        self.timer_label.config(text=f"Time: {self.timer}")
+        self.start_timer()
 
         question = self.questions[self.current_question]
         self.question_label.config(text=question["question"])
@@ -143,6 +175,7 @@ class MillionaireGame:
         self.prize_label.config(text=f"Current Prize: ${self.prize_amounts[self.current_prize_index]:,}")
 
     def check_answer(self, choice):
+        self.timer_running = False  # Stop the timer
         question = self.questions[self.current_question]
         selected_answer = question["options"][choice]
         
@@ -182,7 +215,6 @@ class MillionaireGame:
         question = self.questions[self.current_question]
         correct_answer = question["correct"]
         
-        # 80% chance of getting the correct answer
         if random.random() < 0.8:
             suggested_answer = correct_answer
         else:
@@ -201,7 +233,6 @@ class MillionaireGame:
         question = self.questions[self.current_question]
         correct_answer = question["correct"]
         
-        # Generate audience poll results
         correct_percentage = random.randint(45, 85)
         remaining = 100 - correct_percentage
         wrong_percentages = []
