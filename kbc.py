@@ -6,7 +6,7 @@ class MillionaireGame:
     def __init__(self, root):
         self.root = root
         self.root.title("Who Wants to be a Millionaire - Indian Edition")
-        self.root.geometry("800x650")
+        self.root.geometry("1000x600")  # Increased width for prize ladder
         self.root.configure(bg="#000080")
 
         self.timer = 30
@@ -107,9 +107,34 @@ class MillionaireGame:
             return f"₹{amount}"
 
     def setup_gui(self):
+        # Create main game frame (left side)
+        self.game_frame = tk.Frame(self.root, bg="#000080")
+        self.game_frame.pack(side=tk.LEFT, padx=20, expand=True, fill="both")
+
+        # Create prize ladder frame (right side)
+        self.prize_ladder_frame = tk.Frame(self.root, bg="#000080", width=200)
+        self.prize_ladder_frame.pack(side=tk.RIGHT, padx=20, fill="y")
+
+        # Setup prize ladder
+        self.prize_labels = []
+        for i, amount in enumerate(reversed(self.prize_amounts)):
+            label = tk.Label(
+                self.prize_ladder_frame,
+                text=self.format_money(amount),
+                bg="#000080",
+                fg="white",
+                font=("Arial", 10, "bold"),
+                width=15,
+                pady=5
+            )
+            if amount == 320000:  # Checkpoint amount
+                label.configure(bg="#4B0082")  # Different color for checkpoint
+            label.pack(pady=1)
+            self.prize_labels.append(label)
+
         # Timer label
         self.timer_label = tk.Label(
-            self.root,
+            self.game_frame,
             text="Time: 30",
             bg="#000080",
             fg="white",
@@ -118,12 +143,12 @@ class MillionaireGame:
         self.timer_label.pack(pady=10)
 
         # Question frame
-        self.question_frame = tk.Frame(self.root, bg="#000080")
+        self.question_frame = tk.Frame(self.game_frame, bg="#000080")
         self.question_frame.pack(pady=20)
 
         self.question_label = tk.Label(
             self.question_frame,
-            wraplength=700,
+            wraplength=600,
             bg="#000080",
             fg="white",
             font=("Arial", 14, "bold")
@@ -131,7 +156,7 @@ class MillionaireGame:
         self.question_label.pack()
 
         # Options frame with grid layout
-        self.options_frame = tk.Frame(self.root, bg="#000080")
+        self.options_frame = tk.Frame(self.game_frame, bg="#000080")
         self.options_frame.pack(pady=20)
 
         self.option_buttons = []
@@ -145,13 +170,13 @@ class MillionaireGame:
                 font=("Arial", 12),
                 command=lambda x=i: self.check_answer(x)
             )
-            row = i // 2  # Integer division to get row (0 or 1)
-            col = i % 2   # Remainder to get column (0 or 1)
+            row = i // 2
+            col = i % 2
             btn.grid(row=row, column=col, padx=10, pady=5)
             self.option_buttons.append(btn)
 
         # Lifelines frame
-        self.lifelines_frame = tk.Frame(self.root, bg="#000080")
+        self.lifelines_frame = tk.Frame(self.game_frame, bg="#000080")
         self.lifelines_frame.pack(pady=20)
 
         self.fifty_fifty_btn = tk.Button(
@@ -181,18 +206,9 @@ class MillionaireGame:
         )
         self.ask_audience_btn.pack(side=tk.LEFT, padx=10)
 
-        # Prize label with Indian currency format
-        self.prize_label = tk.Label(
-            self.root,
-            text="Current Prize: ₹0",
-            bg="#000080",
-            fg="white",
-            font=("Arial", 12, "bold")
-        )
-        self.prize_label.pack(pady=20)
-
+        # Quit button
         self.quit_btn = tk.Button(
-            self.root,
+            self.game_frame,
             text="Quit Game",
             command=self.quit_game,
             bg="#8B0000",
@@ -201,27 +217,28 @@ class MillionaireGame:
         )
         self.quit_btn.pack(pady=10)
 
-    def quit_game(self):
-        # Determine the prize amount when quitting
-        if self.current_prize_index > 0:
-            # Get the previous question's prize amount
-            won_amount = self.prize_amounts[self.current_prize_index - 1]
-        else:
-            won_amount = 0
-
-        # Show quit confirmation
-        confirm = messagebox.askyesno(
-            "Quit Game", 
-            f"Are you sure you want to quit? You will win {self.format_money(won_amount)}."
+        # Prize label
+        self.prize_label = tk.Label(
+            self.game_frame,
+            text="Current Prize: ₹0",
+            bg="#000080",
+            fg="white",
+            font=("Arial", 12, "bold")
         )
-        
-        if confirm:
-            messagebox.showinfo(
-                "Game Over", 
-                f"You've chosen to quit. You won {self.format_money(won_amount)}!"
-            )
-            self.root.quit()
+        self.prize_label.pack(pady=20)
 
+    def update_prize_ladder(self):
+        # Reset all labels to default
+        for label in self.prize_labels:
+            label.configure(bg="#000080")
+            if label.cget("text") == self.format_money(320000):
+                label.configure(bg="#4B0082")
+
+        # Highlight current question
+        current_prize = self.format_money(self.prize_amounts[self.current_prize_index])
+        for label in self.prize_labels:
+            if label.cget("text") == current_prize:
+                label.configure(bg="#FFD700", fg="black")
 
     def start_timer(self):
         if self.timer > 0 and self.timer_running:
@@ -230,12 +247,10 @@ class MillionaireGame:
             self.root.after(1000, self.start_timer)
         elif self.timer == 0 and self.timer_running:
             self.timer_running = False
-            # Check if player has crossed checkpoint
             if self.prize_amounts[self.current_prize_index] > self.checkpoint_amount:
                 won_amount = self.checkpoint_amount
             else:
                 won_amount = self.prize_amounts[max(0, self.current_prize_index-1)]
-            
             messagebox.showinfo("Time's Up!", f"You won {self.format_money(won_amount)}")
             self.root.quit()
 
@@ -245,7 +260,6 @@ class MillionaireGame:
             self.root.quit()
             return
 
-        # Reset and start timer
         self.timer = 30
         self.timer_running = True
         self.timer_label.config(text=f"Time: {self.timer}")
@@ -258,6 +272,7 @@ class MillionaireGame:
             self.option_buttons[i].config(text=f"{chr(65+i)}. {option}", state="normal")
 
         self.prize_label.config(text=f"Current Prize: {self.format_money(self.prize_amounts[self.current_prize_index])}")
+        self.update_prize_ladder()
 
     def check_answer(self, choice):
         self.timer_running = False
@@ -274,13 +289,29 @@ class MillionaireGame:
                 self.current_prize_index += 1
                 self.load_question()
         else:
-            # Check if player has crossed checkpoint
             if self.prize_amounts[self.current_prize_index] > self.checkpoint_amount:
                 won_amount = self.checkpoint_amount
             else:
                 won_amount = self.prize_amounts[max(0, self.current_prize_index-1)]
-            
             messagebox.showinfo("Game Over", f"Wrong answer! You won {self.format_money(won_amount)}")
+            self.root.quit()
+
+    def quit_game(self):
+        if self.current_prize_index > 0:
+            won_amount = self.prize_amounts[self.current_prize_index - 1]
+        else:
+            won_amount = 0
+
+        confirm = messagebox.askyesno(
+            "Quit Game", 
+            f"Are you sure you want to quit? You will win {self.format_money(won_amount)}."
+        )
+        
+        if confirm:
+            messagebox.showinfo(
+                "Game Over", 
+                f"You've chosen to quit. You won {self.format_money(won_amount)}!"
+            )
             self.root.quit()
 
     def use_fifty_fifty(self):
