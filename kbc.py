@@ -2,11 +2,75 @@ import tkinter as tk
 from tkinter import messagebox
 import random
 
-class MillionaireGame:
+class UsernameScreen:
     def __init__(self, root):
         self.root = root
         self.root.title("Who Wants to be a Millionaire - Indian Edition")
-        self.root.geometry("1000x600")  # Increased width for prize ladder
+        self.root.geometry("1000x600")
+        self.root.configure(bg="#000080")
+        
+        # Center frame for username entry
+        self.frame = tk.Frame(root, bg="#000080")
+        self.frame.place(relx=0.5, rely=0.4, anchor="center")
+        
+        # Welcome label
+        self.welcome_label = tk.Label(
+            self.frame,
+            text="Welcome to Who Wants to be a Millionaire!",
+            bg="#000080",
+            fg="white",
+            font=("Arial", 20, "bold")
+        )
+        self.welcome_label.pack(pady=20)
+        
+        # Username label
+        self.name_label = tk.Label(
+            self.frame,
+            text="Enter your name:",
+            bg="#000080",
+            fg="white",
+            font=("Arial", 14)
+        )
+        self.name_label.pack(pady=10)
+        
+        # Username entry
+        self.name_entry = tk.Entry(
+            self.frame,
+            font=("Arial", 12),
+            width=30
+        )
+        self.name_entry.pack(pady=10)
+        
+        # Start button
+        self.start_button = tk.Button(
+            self.frame,
+            text="Start Game",
+            command=self.start_game,
+            bg="#000040",
+            fg="white",
+            font=("Arial", 12, "bold")
+        )
+        self.start_button.pack(pady=20)
+    
+    def start_game(self):
+        username = self.name_entry.get().strip()
+        if not username:
+            messagebox.showwarning("Warning", "Please enter your name!")
+            return
+        
+        # Clear the current window contents
+        for widget in self.root.winfo_children():
+            widget.destroy()
+        
+        # Start the main game
+        MillionaireGame(self.root, username)
+
+class MillionaireGame:
+    def __init__(self, root, username):
+        self.root = root
+        self.username = username
+        self.root.title("Who Wants to be a Millionaire - Indian Edition")
+        self.root.geometry("1000x600")
         self.root.configure(bg="#000080")
 
         self.timer = 30
@@ -110,6 +174,16 @@ class MillionaireGame:
         # Create main game frame (left side)
         self.game_frame = tk.Frame(self.root, bg="#000080")
         self.game_frame.pack(side=tk.LEFT, padx=20, expand=True, fill="both")
+
+        # Add username label at the top left
+        self.username_label = tk.Label(
+            self.game_frame,
+            text=f"Hi, {self.username}",
+            bg="#000080",
+            fg="white",
+            font=("Arial", 14, "bold")
+        )
+        self.username_label.pack(anchor="w", pady=10)
 
         # Create prize ladder frame (right side)
         self.prize_ladder_frame = tk.Frame(self.root, bg="#000080", width=200)
@@ -251,12 +325,12 @@ class MillionaireGame:
                 won_amount = self.checkpoint_amount
             else:
                 won_amount = self.prize_amounts[max(0, self.current_prize_index-1)]
-            messagebox.showinfo("Time's Up!", f"You won {self.format_money(won_amount)}")
+            messagebox.showinfo("Time's Up!", f"{self.username}, you won {self.format_money(won_amount)}")
             self.root.quit()
 
     def load_question(self):
         if self.current_question >= len(self.questions):
-            messagebox.showinfo("Congratulations!", "You've won ₹7 Crore!")
+            messagebox.showinfo("Congratulations!", f"Congratulations {self.username}! You've won ₹7 Crore!")
             self.root.quit()
             return
 
@@ -281,10 +355,10 @@ class MillionaireGame:
         
         if selected_answer == question["correct"]:
             if self.current_question == len(self.questions) - 1:
-                messagebox.showinfo("Congratulations!", "You've won ₹7 Crore!")
+                messagebox.showinfo("Congratulations!", f"Congratulations {self.username}! You've won ₹7 Crore!")
                 self.root.quit()
             else:
-                messagebox.showinfo("Correct!", f"You've won {self.format_money(self.prize_amounts[self.current_prize_index])}!")
+                messagebox.showinfo("Correct!", f"Well done {self.username}! You've won {self.format_money(self.prize_amounts[self.current_prize_index])}!")
                 self.current_question += 1
                 self.current_prize_index += 1
                 self.load_question()
@@ -293,7 +367,7 @@ class MillionaireGame:
                 won_amount = self.checkpoint_amount
             else:
                 won_amount = self.prize_amounts[max(0, self.current_prize_index-1)]
-            messagebox.showinfo("Game Over", f"Wrong answer! You won {self.format_money(won_amount)}")
+            messagebox.showinfo("Game Over", f"Sorry {self.username}, wrong answer! You won {self.format_money(won_amount)}")
             self.root.quit()
 
     def quit_game(self):
@@ -310,7 +384,7 @@ class MillionaireGame:
         if confirm:
             messagebox.showinfo(
                 "Game Over", 
-                f"You've chosen to quit. You won {self.format_money(won_amount)}!"
+                f"{self.username}, you've chosen to quit. You won {self.format_money(won_amount)}!"
             )
             self.root.quit()
 
@@ -387,5 +461,5 @@ class MillionaireGame:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    game = MillionaireGame(root)
+    username_screen = UsernameScreen(root)
     root.mainloop()
