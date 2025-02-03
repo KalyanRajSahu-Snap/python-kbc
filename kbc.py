@@ -170,6 +170,7 @@ class MillionaireGame:
         else:
             return f"₹{amount}"
 
+
     def setup_gui(self):
         # Create main game frame (left side)
         self.game_frame = tk.Frame(self.root, bg="#000080")
@@ -408,16 +409,64 @@ class MillionaireGame:
         if not self.lifelines["phone_friend"]:
             return
         
+        # Define friends with different expertise
+        friends = [
+            {"name": "Tech Expert Raj", "accuracy": 0.9, "field": "Technology and Science"},
+            {"name": "College Professor Priya", "accuracy": 0.8, "field": "General Knowledge"},
+            {"name": "Sports Enthusiast Amit", "accuracy": 0.6, "field": "Sports and Entertainment"}
+        ]
+        
+        # Create a friend selection window
+        friend_window = tk.Toplevel(self.root)
+        friend_window.title("Choose a Friend")
+        friend_window.geometry("400x250")
+        friend_window.configure(bg="#000080")
+        
+        # Label for friend selection
+        tk.Label(
+            friend_window, 
+            text="Choose a friend to call:", 
+            bg="#000080", 
+            fg="white", 
+            font=("Arial", 14)
+        ).pack(pady=10)
+        
+        # Variable to store selected friend
+        selected_friend = tk.StringVar()
+        
+        def select_friend(friend):
+            selected_friend.set(friend["name"])
+            friend_window.destroy()
+            self.process_phone_friend_help(friend)
+        
+        # Create buttons for each friend with their expertise
+        for friend in friends:
+            tk.Button(
+                friend_window, 
+                text=f"{friend['name']} ({friend['field']})", 
+                command=lambda f=friend: select_friend(f),
+                bg="#000040", 
+                fg="white", 
+                font=("Arial", 12),
+                width=40
+            ).pack(pady=5)
+    
+    def process_phone_friend_help(self, friend):
         question = self.questions[self.current_question]
         correct_answer = question["correct"]
         
-        if random.random() < 0.8:
+        # Use friend's expertise to determine answer accuracy
+        if random.random() < friend["accuracy"]:
             suggested_answer = correct_answer
         else:
             wrong_options = [opt for opt in question["options"] if opt != correct_answer]
             suggested_answer = random.choice(wrong_options)
         
-        messagebox.showinfo("Phone a Friend", f"Your friend thinks the answer is: {suggested_answer}")
+        messagebox.showinfo(
+            "Phone a Friend", 
+            f"{friend['name']} thinks the answer is: {suggested_answer}\n"
+            f"Confidence Level: {friend['accuracy']*100:.0f}%"
+        )
         
         self.lifelines["phone_friend"] = False
         self.phone_friend_btn.config(state="disabled")
