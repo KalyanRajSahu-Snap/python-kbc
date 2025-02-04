@@ -2,6 +2,87 @@ import tkinter as tk
 from tkinter import messagebox
 import random
 
+class CelebrationWindow:
+    def __init__(self, root, username):
+        self.celebration_window = tk.Toplevel(root)
+        self.celebration_window.title("Congratulations!")
+        self.celebration_window.geometry("800x600")
+        self.celebration_window.configure(bg="#000080")
+
+        # Celebration message
+        congratulations_label = tk.Label(
+            self.celebration_window,
+            text=f"CONGRATULATIONS {username}!\nYOU'VE WON 7 CRORE!",
+            bg="#000080",
+            fg="gold",
+            font=("Arial", 24, "bold")
+        )
+        congratulations_label.pack(pady=50)
+
+        # Create canvas for confetti
+        self.canvas = tk.Canvas(
+            self.celebration_window, 
+            bg="#000080", 
+            highlightthickness=0
+        )
+        self.canvas.pack(fill=tk.BOTH, expand=True)
+
+        # Create confetti
+        self.confetti_colors = ['red', 'gold', 'white', 'blue', 'green', 'yellow', 'purple']
+        self.confetti_pieces = []
+
+        # Generate confetti
+        for _ in range(200):
+            x = random.randint(0, 800)
+            y = random.randint(-100, 0)
+            size = random.randint(5, 15)
+            color = random.choice(self.confetti_colors)
+            piece = self.canvas.create_rectangle(
+                x, y, x+size, y+size, 
+                fill=color, 
+                outline=color
+            )
+            self.confetti_pieces.append({
+                'id': piece, 
+                'speed': random.uniform(2, 5),
+                'x_drift': random.uniform(-2, 2)
+            })
+
+        # Start confetti animation
+        self.animate_confetti()
+
+        # Close button
+        close_btn = tk.Button(
+            self.celebration_window,
+            text="Close",
+            command=self.celebration_window.destroy,
+            bg="#8B0000",
+            fg="white",
+            font=("Arial", 14, "bold")
+        )
+        close_btn.pack(pady=20)
+
+    def animate_confetti(self):
+        for piece_data in self.confetti_pieces:
+            self.canvas.move(
+                piece_data['id'], 
+                piece_data['x_drift'], 
+                piece_data['speed']
+            )
+            coords = self.canvas.coords(piece_data['id'])
+            
+            # If confetti goes beyond window, reset to top
+            if coords[1] > 600:
+                self.canvas.coords(
+                    piece_data['id'], 
+                    random.randint(0, 800), 
+                    -10, 
+                    coords[0]+10, 
+                    0
+                )
+
+        self.canvas.after(50, self.animate_confetti)
+
 class UsernameScreen:
     def __init__(self, root):
         self.root = root
@@ -170,7 +251,6 @@ class MillionaireGame:
         else:
             return f"₹{amount}"
 
-
     def setup_gui(self):
         # Create main game frame (left side)
         self.game_frame = tk.Frame(self.root, bg="#000080")
@@ -315,6 +395,8 @@ class MillionaireGame:
             if label.cget("text") == current_prize:
                 label.configure(bg="#FFD700", fg="black")
 
+# [Previous code continues...]
+
     def start_timer(self):
         if self.timer > 0 and self.timer_running:
             self.timer -= 1
@@ -327,12 +409,10 @@ class MillionaireGame:
             else:
                 won_amount = self.prize_amounts[max(0, self.current_prize_index-1)]
             messagebox.showinfo("Time's Up!", f"{self.username}, you won {self.format_money(won_amount)}")
-            self.root.quit()
 
     def load_question(self):
         if self.current_question >= len(self.questions):
-            messagebox.showinfo("Congratulations!", f"Congratulations {self.username}! You've won ₹7 Crore!")
-            self.root.quit()
+            CelebrationWindow(self.root, self.username)
             return
 
         self.timer = 30
@@ -356,8 +436,7 @@ class MillionaireGame:
         
         if selected_answer == question["correct"]:
             if self.current_question == len(self.questions) - 1:
-                messagebox.showinfo("Congratulations!", f"Congratulations {self.username}! You've won ₹7 Crore!")
-                self.root.quit()
+                CelebrationWindow(self.root, self.username)
             else:
                 messagebox.showinfo("Correct!", f"Well done {self.username}! You've won {self.format_money(self.prize_amounts[self.current_prize_index])}!")
                 self.current_question += 1
@@ -369,7 +448,6 @@ class MillionaireGame:
             else:
                 won_amount = self.prize_amounts[max(0, self.current_prize_index-1)]
             messagebox.showinfo("Game Over", f"Sorry {self.username}, wrong answer! You won {self.format_money(won_amount)}")
-            self.root.quit()
 
     def quit_game(self):
         if self.current_prize_index > 0:
@@ -387,7 +465,6 @@ class MillionaireGame:
                 "Game Over", 
                 f"{self.username}, you've chosen to quit. You won {self.format_money(won_amount)}!"
             )
-            self.root.quit()
 
     def use_fifty_fifty(self):
         if not self.lifelines["fifty_fifty"]:
